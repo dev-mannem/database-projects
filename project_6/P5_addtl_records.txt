@@ -1,0 +1,65 @@
+/* 
+   This file create addiontional records for project 5
+   IA643
+   Fall 2016
+*/
+
+-- additional admin
+
+INSERT INTO Administrator VALUES (
+                    2203, 301, 'Steve', 'Strong', 'ADMINS', 5);
+INSERT INTO Administrator VALUES (
+                    2204, 302, 'Ted', 'Lee', 'ADMINT', 5);
+
+-- additional doctors
+
+INSERT INTO Doctor VALUES (
+                   4003, 301,'Tina', 'Hemming',  '2-Nov-1972','F','Family', 'ADMINS', 4);
+INSERT INTO Doctor VALUES (
+                   4004, 302,'Kevin', 'McCain', '20-Oct-1980', 'M', 'Family', 'ADMINT', 4);
+
+-- additional app users
+
+INSERT INTO App_User VALUES (
+505, 2203, 'A', 'AdminS', 'DBA643', 5);
+INSERT INTO App_User VALUES (
+506, 2204, 'A','AdminT', 'DBA643', 5);
+INSERT INTO App_User VALUES (
+507, 4003, 'D', 'THemming', 'DBA643', 5);
+INSERT INTO App_User VALUES (
+508, 4004, 'D','KMcCain', 'DBA643', 5);
+
+-- additional patients
+
+INSERT INTO Patient VALUES(
+51003, 4003,'Dustin','Hansen', '12-Jun-1991','M', 'THEMMING', 4);
+
+INSERT INTO Patient VALUES(
+51004, 4004,'Leila','Smith','2-Aug-1968', 'F', 'KMCCAIN', 4);
+
+-- additional visits
+INSERT INTO Visit VALUES(
+620005,4003, 51003,301,'18-Oct-16','W', 'THEMMING', 4);
+INSERT INTO Visit VALUES(
+620006,4003, 51003,301,'21-Nov-15', 'D', 'THEMMING', 4);
+
+INSERT INTO Visit VALUES(
+620007,4004, 51004, 302,'22-Aug-16','D', 'KMCCAIN', 4);
+INSERT INTO Visit VALUES(
+620008,4004, 51004,302, '12-DEC-15','D','KMCCAIN', 4);
+
+-- additional diagnoses
+INSERT INTO Diagnosis VALUES(
+'R623456',NULL, 'Flu', 620005,'18-Oct-2016','THEMMING',5);
+
+INSERT INTO Diagnosis VALUES(
+'R723456',NULL, 'Ear infection', 620006,'21-NOV-2015','THEMMING',5);
+
+INSERT INTO Diagnosis VALUES (
+'R823456',NULL,'Kidney infection', 620007, '22-Aug-2016','KMCCAIN',5);
+
+INSERT INTO Diagnosis VALUES (
+'R923456',NULL,'Left foot ankle bone #4 infection due to early foot injury', 620008, '13-DEC-2015','KMCCAIN',5);
+
+INSERT INTO Diagnosis VALUES (
+'R103456',NULL,'Diarrhea', 620008, '13-NOV-2015','KMCCAIN',5);

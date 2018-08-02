@@ -1,0 +1,404 @@
+/**************************************
+**IA643-DATABASE SECURITY AND AUDITING
+**FALL 2016, SECTION-1 WEDNESDAY
+**PROJECT #5
+**************************************/
+
+--- connect to dba643 user account ---
+conn dba643/Hang2md
+
+/*******USERS********/
+
+---drop users---
+DROP USER AdminA CASCADE;
+DROP USER AdminB CASCADE;
+DROP USER AdminS CASCADE;
+DROP USER AdminT CASCADE;
+
+DROP USER RDavison CASCADE;
+DROP USER SSEYmour CASCADE;
+DROP USER THemming CASCADE;
+DROP USER KMcCain CASCADE;
+
+---create users---
+Create USER AdminA IDENTIFIED BY AdminA
+DEFAULT TABLESPACE IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO AdminA;
+
+
+Create USER AdminB IDENTIFIED BY AdminB
+DEFAULT TABLESPACE IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO AdminB;
+
+
+Create USER AdminS IDENTIFIED BY AdminS
+DEFAULT TABLESPACE IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO AdminS;
+
+
+Create USER AdminT IDENTIFIED BY AdminT
+DEFAULT TABLESPACE IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO AdminT;
+
+
+Create USER RDavison IDENTIFIED BY RDavison
+DEFAULT TABLESPACE IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO RDavison;
+
+
+Create USER SSEYmour IDENTIFIED BY SSeymour
+DEFAULT TABLESPACE IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO SSEYmour;
+
+
+Create USER THemming IDENTIFIED BY THemming
+DEFAULT TABLESPACE IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO THemming;
+
+
+Create USER KMcCain IDENTIFIED BY KMcCain
+DEFAULT TABLESPACE IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO KMcCain;
+
+/**********************************
+User to be created in sys account
+We should login as sys as sysdba from 
+command prompt to create this user and 
+grant permissions.
+***********************************/
+/*
+DROP USER sysadmin_ctx CASCADE;
+
+CREATE USER sysadmin_ctx IDENTIFIED BY admin;
+GRANT CREATE SESSION, CREATE ANY CONTEXT, CREATE PROCEDURE, CREATE TRIGGER, ADMINISTER DATABASE TRIGGER TO sysadmin_ctx IDENTIFIED BY admin;
+GRANT EXECUTE ON DBMS_SESSION TO sysadmin_ctx;
+GRANT EXECUTE ON DBMS_RLS TO sysadmin_ctx;
+GRANT RESOURCE TO sysadmin_ctx;
+/
+
+*/
+
+
+---drop triggers---
+DROP TRIGGER Trigger_Administrator;
+DROP TRIGGER Trigger_Clinic;
+DROP TRIGGER Trigger_Doctor;
+DROP TRIGGER Trigger_Patient;
+DROP TRIGGER Trigger_Visit;
+DROP TRIGGER Trigger_Diagnosis;
+DROP TRIGGER Trigger_AppUser;
+
+/*******TRIGGERS********/
+
+---create triggers---
+CREATE OR REPLACE TRIGGER Trigger_Administrator
+BEFORE INSERT OR UPDATE ON Administrator
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+CREATE OR REPLACE TRIGGER Trigger_Clinic
+BEFORE INSERT OR UPDATE ON Clinic
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+CREATE OR REPLACE TRIGGER Trigger_Doctor
+BEFORE INSERT OR UPDATE ON Doctor
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+CREATE OR REPLACE TRIGGER Trigger_Patient
+BEFORE INSERT OR UPDATE ON Patient
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+CREATE OR REPLACE TRIGGER Trigger_Visit
+BEFORE INSERT OR UPDATE ON Visit
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+CREATE OR REPLACE TRIGGER Trigger_Diagnosis
+BEFORE INSERT OR UPDATE ON Diagnosis
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+CREATE OR REPLACE TRIGGER Trigger_AppUser
+BEFORE INSERT OR UPDATE ON App_User
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+/*******ROLES*******/
+
+---drop roles---
+DROP ROLE Admin_R;
+DROP ROLE Doctor_R;
+
+---create roles---
+CREATE ROLE Admin_R;
+CREATE ROLE Doctor_R;
+
+/********SYNONYMS********/
+
+---drop synonyms---
+DROP PUBLIC SYNONYM Administrator;
+DROP PUBLIC SYNONYM Clinic;
+DROP PUBLIC SYNONYM Doctor;
+DROP PUBLIC SYNONYM Patient;
+DROP PUBLIC SYNONYM Visit;
+DROP PUBLIC SYNONYM Diagnosis;
+
+---create synonyms and grant privileges---
+CREATE PUBLIC SYNONYM Administrator FOR DBA643.Administrator;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Administrator TO Admin_R;
+GRANT SELECT ON Administrator TO Doctor_R;
+
+CREATE PUBLIC SYNONYM Clinic FOR DBA643.Clinic;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Clinic TO Admin_R;
+GRANT SELECT ON Clinic TO Doctor_R;
+
+CREATE PUBLIC SYNONYM Doctor FOR DBA643.Doctor;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Doctor TO Admin_R;
+GRANT SELECT ON Doctor TO Doctor_R;
+
+CREATE PUBLIC SYNONYM Patient FOR DBA643.Patient;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Patient TO Doctor_R;
+
+CREATE PUBLIC SYNONYM Visit FOR DBA643.Visit;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Visit TO Doctor_R;
+
+CREATE PUBLIC SYNONYM Diagnosis FOR DBA643.Diagnosis;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Diagnosis TO Doctor_R;
+
+GRANT Admin_R TO AdminA, AdminB, AdminS, AdminT;
+GRANT Doctor_R TO RDavison, SSEYmour, THemming, KMcCain;
+
+
+--- grant select privilege to sysadmin_ctx user ---
+
+GRANT SELECT ON App_User to sysadmin_ctx;
+GRANT SELECT ON Doctor to sysadmin_ctx;
+
+
+/*** CREATING APPLICATION CONTEXT AND AFTER LOGON TRIGGER ***/
+
+--- connect to sysadmin_ctx user account ---
+conn sysadmin_ctx/admin
+
+---creating application context using package---
+
+CREATE OR REPLACE CONTEXT Aliana_Req USING pkg_Aliana_Health_Sys;
+
+--- create package with a procedure in it ---
+
+--- package specification ---
+CREATE OR REPLACE PACKAGE pkg_Aliana_Health_Sys IS
+PROCEDURE Get_Clinic_Id;
+END;
+/
+
+--- package body ---
+CREATE OR REPLACE PACKAGE BODY pkg_Aliana_Health_Sys IS
+PROCEDURE Get_Clinic_Id IS
+Clinic_Id_Return Number;
+BEGIN
+
+SELECT Clinic_ID INTO Clinic_Id_Return FROM Doctor 
+WHERE Doctor_ID IN ( 
+SELECT EMP_ID FROM DBA643.App_User 
+WHERE UPPER(APP_USERNAME) = SYS_CONTEXT('USERENV','SESSION_USER'));
+DBMS_SESSION.SET_CONTEXT('ALIANA_REQ','ClinicID',Clinic_Id_Return);
+
+EXCEPTION
+WHEN NO_DATA_FOUND THEN
+Clinic_Id_Return := 0;
+DBMS_SESSION.SET_CONTEXT('ALIANA_REQ','ClinicID',Clinic_Id_Return);
+
+END;
+END;
+/
+SHOW ERRORS;
+
+--- After logon trigger ---
+CREATE OR REPLACE TRIGGER After_Logon_Trigger
+AFTER LOGON ON DATABASE
+BEGIN
+sysadmin_ctx.pkg_Aliana_Health_Sys.Get_Clinic_Id;
+END;
+/
+SHOW ERRORS;
+
+
+--- connect as dba643 to create policy functions ---
+conn dba643/Hang2md
+
+/*******SECURITY POLICY FUNCTIONS********/
+
+---creating policy functions---
+
+--- policy function for ADMINISTRATOR, DOCTOR AND CLINIC tables ---
+CREATE OR REPLACE FUNCTION Sec_Policy_Admin (
+P_Schema_Name IN VARCHAR2, 
+P_Object_Name IN VARCHAR2 )
+RETURN VARCHAR2 IS
+Return_Var VARCHAR2(300);
+Select_Return CHAR(1);
+BEGIN
+SELECT USER_TYPE INTO Select_Return FROM DBA643.APP_USER WHERE UPPER(APP_USERNAME) = SYS_CONTEXT('USERENV', 'SESSION_USER');
+IF USER = 'DBA643' or Select_Return ='D' THEN
+Return_Var := '';
+ELSE
+Return_Var := 'CTL_SEC_USER = USER';
+END IF;
+RETURN Return_Var;
+END;
+/
+SHOW ERRORS;
+
+
+--- policy function for PATIENT table ---
+CREATE OR REPLACE FUNCTION Sec_Policy_Patient (
+P_Schema_Name IN VARCHAR2,
+P_Object_Name IN VARCHAR2 )
+RETURN VARCHAR2 IS
+Return_Var VARCHAR2(300);
+Select_Return CHAR(1);
+BEGIN
+SELECT USER_TYPE INTO Select_Return FROM DBA643.APP_USER WHERE UPPER(APP_USERNAME) = SYS_CONTEXT('USERENV', 'SESSION_USER');
+IF USER = 'DBA643' THEN
+Return_Var := '';
+ELSIF Select_Return = 'D' THEN
+Return_Var := 'DOCTOR_ID IN (SELECT DOCTOR_ID FROM DOCTOR WHERE CLINIC_ID = ' || NVL(SYS_CONTEXT('ALIANA_REQ','ClinicID'),0) || ')';
+ELSE
+Return_Var := 'CTL_SEC_USER = USER';
+END IF;
+RETURN Return_Var;
+END;
+/
+SHOW ERRORS;
+
+
+--- policy function for VISIT table ---
+CREATE OR REPLACE FUNCTION Sec_Policy_Visit (
+P_Schema_Name IN VARCHAR2,
+P_Object_Name IN VARCHAR2 )
+RETURN VARCHAR2 IS
+Return_Var VARCHAR2(300);
+Select_Return CHAR(1);
+BEGIN
+SELECT USER_TYPE INTO Select_Return FROM DBA643.APP_USER WHERE UPPER(APP_USERNAME) = SYS_CONTEXT('USERENV', 'SESSION_USER');
+IF USER = 'DBA643' THEN
+Return_Var := '';
+ELSIF Select_Return = 'D' THEN
+Return_Var := 'PATIENT_ID IN (SELECT PATIENT_ID FROM  PATIENT, DOCTOR WHERE PATIENT.DOCTOR_ID = DOCTOR.DOCTOR_ID AND DOCTOR.CLINIC_ID = ' || NVL(SYS_CONTEXT('ALIANA_REQ','ClinicID'),0) || ')';
+ELSE
+Return_Var := 'CTL_SEC_USER = USER';
+END IF;
+RETURN Return_Var;
+END;
+/
+SHOW ERRORS;
+
+
+--- policy function for DIAGNOSIS table ---
+CREATE OR REPLACE FUNCTION Sec_Policy_Diagnosis (
+P_Schema_Name IN VARCHAR2,
+P_Object_Name IN VARCHAR2 )
+RETURN VARCHAR2 IS
+Return_Var VARCHAR2(300);
+Select_Return CHAR(1);
+BEGIN
+SELECT USER_TYPE INTO Select_Return FROM DBA643.APP_USER WHERE UPPER(APP_USERNAME) = SYS_CONTEXT('USERENV', 'SESSION_USER');
+IF USER = 'DBA643' THEN
+Return_Var := '';
+ELSIF Select_Return = 'D' THEN
+Return_Var := 'VISIT_ID IN (SELECT VISIT_ID FROM VISIT, PATIENT, DOCTOR, CLINIC WHERE VISIT.PATIENT_ID = PATIENT.PATIENT_ID AND PATIENT.DOCTOR_ID = DOCTOR.DOCTOR_ID AND DOCTOR.CLINIC_ID = CLINIC.CLINIC_ID AND CLINIC.CLINIC_ID = ' || SYS_CONTEXT('ALIANA_REQ','ClinicID') || ')';
+ELSE
+Return_Var := 'CTL_SEC_USER = USER';
+END IF;
+RETURN Return_Var;
+END;
+/
+SHOW ERRORS;
+
+
+/**********POLICY**********/
+
+---drop policies---
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Administrator', 'Administrator_Table_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Clinic', 'Clinic_Table_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Doctor', 'Doctor_Table_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Patient', 'Patient_Table_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Visit', 'Visit_Table_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Diagnosis', 'Diagnosis_Table_Sec' );
+
+---add policies---
+---policy for admin related tables---
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Administrator', 'Administrator_Table_Sec', 'DBA643', 'Sec_Policy_Admin', 'SELECT, INSERT, UPDATE, DELETE',TRUE);
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Clinic', 'Clinic_Table_Sec', 'DBA643', 'Sec_Policy_Admin', 'SELECT, INSERT, UPDATE, DELETE',TRUE);
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Doctor', 'Doctor_Table_Sec', 'DBA643', 'Sec_Policy_Admin', 'SELECT, INSERT, UPDATE, DELETE',TRUE);
+
+---policy for patient tables---
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Patient', 'Patient_Table_Sec', 'DBA643', 'Sec_Policy_Patient', 'SELECT, INSERT, UPDATE, DELETE',TRUE);
+
+---policy for visit tables---
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Visit', 'Visit_Table_Sec', 'DBA643', 'Sec_Policy_Visit', 'SELECT, INSERT, UPDATE, DELETE',TRUE);
+
+---policy for diagnosis tables---
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Diagnosis', 'Diagnosis_Table_Sec', 'DBA643', 'Sec_Policy_Diagnosis', 'SELECT, INSERT, UPDATE, DELETE',TRUE);

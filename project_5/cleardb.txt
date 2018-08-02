@@ -1,0 +1,55 @@
+DROP USER AdminA CASCADE;
+DROP USER AdminB CASCADE;
+DROP USER AdminS CASCADE;
+DROP USER AdminT CASCADE;
+DROP USER RDavison CASCADE;
+DROP USER SSEYmour CASCADE;
+DROP USER THemming CASCADE;
+DROP USER KMcCain CASCADE;
+
+
+DROP TRIGGER Trigger_Administrator;
+DROP TRIGGER Trigger_Clinic;
+DROP TRIGGER Trigger_Doctor;
+DROP TRIGGER Trigger_Patient;
+DROP TRIGGER Trigger_Visit;
+DROP TRIGGER Trigger_Diagnosis;
+DROP TRIGGER Trigger_AppUser;
+
+
+DROP ROLE Admin_R;
+DROP ROLE Doctor_R;
+
+DROP PUBLIC SYNONYM Administrator;
+DROP PUBLIC SYNONYM Clinic;
+DROP PUBLIC SYNONYM Doctor;
+DROP PUBLIC SYNONYM Patient;
+DROP PUBLIC SYNONYM Visit;
+DROP PUBLIC SYNONYM Diagnosis;
+
+
+conn sysadmin_ctx/admin
+
+
+
+drop package pkg_Aliana_Health_Sys;
+
+drop trigger After_Logon_Trigger;
+
+conn dba643/Hang2md
+
+drop function  Sec_Policy_Admin;
+
+
+drop function Sec_Policy_Patient;
+
+
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Administrator', 'Administrator_Table_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Clinic', 'Clinic_Table_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Doctor', 'Doctor_Table_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Patient', 'Patient_Table_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Visit', 'Visit_Table_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Diagnosis', 'Diagnosis_Table_Sec' );
+
+-- drop user sysadmin_ctx cascade;
+--drop context Aliana_Req;

@@ -1,0 +1,57 @@
+/**************************************
+**IA643-DATABASE SECURITY AND AUDITING
+**FALL 2016, SECTION-1 WEDNESDAY
+**PROJECT #6
+**************************************/
+
+--- connect to dba643 user account ---
+conn dba643/Hang2md
+
+
+/**********POLICY**********/
+
+---drop policies---
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Patient', 'Patient_Table_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Visit', 'Visit_Table_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Diagnosis', 'Diagnosis_Table_Sec' );
+
+---add policies---
+
+---policy for patient tables---
+BEGIN 
+DBMS_RLS.ADD_Policy (
+OBJECT_SCHEMA => 'DBA643', 
+OBJECT_NAME => 'Patient', 
+POLICY_NAME => 'Patient_Table_Sec', 
+FUNCTION_SCHEMA => 'DBA643', 
+POLICY_FUNCTION => 'Sec_Policy_Patient', 
+SEC_RELEVANT_COLS => 'DOB', 
+SEC_RELEVANT_COLS_OPT => DBMS_RLS.ALL_ROWS);
+END;
+/
+
+---policy for visit tables---
+BEGIN 
+DBMS_RLS.ADD_Policy (
+OBJECT_SCHEMA => 'DBA643', 
+OBJECT_NAME => 'Visit', 
+POLICY_NAME => 'Visit_Table_Sec', 
+FUNCTION_SCHEMA => 'DBA643', 
+POLICY_FUNCTION => 'Sec_Policy_Visit', 
+SEC_RELEVANT_COLS => 'PATIENT_ID, VISIT_DATE', 
+SEC_RELEVANT_COLS_OPT => DBMS_RLS.ALL_ROWS);
+END;
+/
+
+---policy for diagnosis tables---
+BEGIN 
+DBMS_RLS.ADD_Policy (
+OBJECT_SCHEMA => 'DBA643', 
+OBJECT_NAME => 'Diagnosis', 
+POLICY_NAME => 'Diagnosis_Table_Sec', 
+FUNCTION_SCHEMA => 'DBA643', 
+POLICY_FUNCTION => 'Sec_Policy_Diagnosis', 
+SEC_RELEVANT_COLS => 'DIAGNOSIS_DETAIL', 
+SEC_RELEVANT_COLS_OPT =>DBMS_RLS.ALL_ROWS);
+END;
+/

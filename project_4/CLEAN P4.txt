@@ -1,0 +1,44 @@
+---drop users---
+DROP USER AdminA CASCADE;
+DROP USER AdminB CASCADE;
+DROP USER RDavison CASCADE;
+DROP USER SSEYmour CASCADE;
+
+---drop roles---
+DROP ROLE Admin_R;
+DROP ROLE Doctor_R;
+
+---drop triggers---
+DROP TRIGGER Trigger_Administrator;
+DROP TRIGGER Trigger_Clinic;
+DROP TRIGGER Trigger_Doctor;
+DROP TRIGGER Trigger_Patient;
+DROP TRIGGER Trigger_Visit;
+DROP TRIGGER Trigger_Diagnosis;
+DROP TRIGGER Trigger_AppUser;
+
+---drop synonyms---
+DROP PUBLIC SYNONYM Administrator;
+DROP PUBLIC SYNONYM Clinic;
+DROP PUBLIC SYNONYM Doctor;
+DROP PUBLIC SYNONYM Patient;
+DROP PUBLIC SYNONYM Visit;
+DROP PUBLIC SYNONYM Diagnosis;
+
+---drop policies---
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Administrator', 'Administrator_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Clinic', 'Clinic_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Doctor', 'Doctor_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Patient', 'Patient_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Visit', 'Visit_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Diagnosis', 'Diagnosis_Owner_Sec' );
+
+
+DROP TABLE APP_USER;
+Drop Table Diagnosis;
+Drop table Visit;
+Drop Table Administrator;
+Drop Table Patient;
+Drop Table Doctor;
+DROP TABLE Clinic;
+

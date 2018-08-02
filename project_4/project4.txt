@@ -1,0 +1,244 @@
+/*******************************
+prompt"APP_USER";
+SELECT * FROM APP_USER;
+
+prompt"DIAGNOSIS";
+SELECT * FROM DIAGNOSIS;
+
+prompt"VISIT";
+SELECT * FROM VISIT;
+
+prompt"ADMINISTRATOR";
+SELECT * FROM ADMINISTRATOR;
+
+prompt"PATIENT";
+SELECT * FROM PATIENT;
+
+prompt"DOCTOR";
+SELECT * FROM DOCTOR;
+
+prompt"CLINIC";
+SELECT * FROM CLINIC;
+********************************/
+
+/**********AdminA***********/
+DROP USER AdminA CASCADE;
+
+Create USER AdminA IDENTIFIED BY AdminA
+DEFAULT TABLESPACE IA643_TBS
+QUOTA 10M ON IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO AdminA;
+
+/**********AdminB***********/
+DROP USER AdminB CASCADE;
+
+Create USER AdminB IDENTIFIED BY AdminB
+DEFAULT TABLESPACE IA643_TBS
+QUOTA 10M ON IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO AdminB;
+
+/**********RDavison***********/
+DROP USER RDavison CASCADE;
+
+Create USER RDavison IDENTIFIED BY RDavison
+DEFAULT TABLESPACE IA643_TBS
+QUOTA 10M ON IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO RDavison;
+
+/**********SSEYmour***********/
+DROP USER SSEYmour CASCADE;
+
+Create USER SSEYmour IDENTIFIED BY SSeymour
+DEFAULT TABLESPACE IA643_TBS
+QUOTA 10M ON IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO SSEYmour;
+
+/**********Admin_R************/
+DROP ROLE Admin_R;
+CREATE ROLE Admin_R;
+
+/**********Doctor_R************/
+DROP ROLE Doctor_R;
+CREATE ROLE Doctor_R;
+
+/******DROP TRIGGERS*********/
+DROP TRIGGER Trigger_Administrator;
+DROP TRIGGER Trigger_Clinic;
+DROP TRIGGER Trigger_Doctor;
+DROP TRIGGER Trigger_Patient;
+DROP TRIGGER Trigger_Visit;
+DROP TRIGGER Trigger_Diagnosis;
+
+/***************TRIGGERS**********/
+CREATE OR REPLACE TRIGGER Trigger_Administrator
+BEFORE INSERT, UPDATE ON Administrator
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+
+CREATE OR REPLACE TRIGGER Trigger_Clinic
+BEFORE INSERT, UPDATE ON Clinic
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+
+CREATE OR REPLACE TRIGGER Trigger_Doctor
+BEFORE INSERT, UPDATE ON Doctor
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+
+CREATE OR REPLACE TRIGGER Trigger_Patient
+BEFORE INSERT, UPDATE ON Patient
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+
+CREATE OR REPLACE TRIGGER Trigger_Visit
+BEFORE INSERT, UPDATE ON Visit
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+
+CREATE OR REPLACE TRIGGER Trigger_Diagnosis
+BEFORE INSERT, UPDATE ON Diagnosis
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+
+/**********SYNONYM'S************/
+DROP PUBLIC SYNONYM Administrator;
+CREATE PUBLIC SYNONYM Administrator FOR DBA643.Administrator;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Administrator TO Admin_R;
+GRANT SELECT ON Administrator TO Doctor_R;
+
+DROP PUBLIC SYNONYM Clinic;
+CREATE PUBLIC SYNONYM Clinic FOR DBA643.Clinic;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Clinic TO Admin_R;
+GRANT SELECT ON Clinic TO Doctor_R;
+
+DROP PUBLIC SYNONYM Doctor;
+CREATE PUBLIC SYNONYM Doctor FOR DBA643.Doctor;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Doctor TO Admin_R;
+GRANT SELECT ON Doctor TO Doctor_R;
+
+DROP PUBLIC SYNONYM Patient;
+CREATE PUBLIC SYNONYM Patient FOR DBA643.Patient;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Patient TO Doctor_R;
+
+DROP PUBLIC SYNONYM Visit;
+CREATE PUBLIC SYNONYM Visit FOR DBA643.Visit;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Visit TO Doctor_R;
+
+DROP PUBLIC SYNONYM Diagnosis;
+CREATE PUBLIC SYNONYM Diagnosis FOR DBA643.Diagnosis;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Diagnosis TO Doctor_R;
+
+GRANT Admin_R TO AdminA, AdminB;
+GRANT Doctor_R TO RDavison, SSEYmour;
+
+/*******SECURITY POLICY FUNCTION********/
+CREATE OR REPLACE FUNCTION Sec_Policy_Patient (
+P_Schema_Name IN VARCHAR2, 
+P_Object_Name IN VARCHAR2 )
+RETURN VARCHAR2 AS
+Return_Var VARCHAR2(255);
+BEGIN
+IF USER = 'DBA643' THEN
+Return_Var := '';
+ELSE
+ Return_Var := 'CTL_SEC_USER = USER';
+END IF;
+RETURN Return_Var;
+END;
+/
+show errors;
+
+CREATE OR REPLACE FUNCTION Sec_Policy_Admin (
+P_Schema_Name IN VARCHAR2, 
+P_Object_Name IN VARCHAR2 )
+RETURN VARCHAR2 AS
+Return_Var VARCHAR2(255);
+Select_Return CHAR(1);
+BEGIN
+select USER_TYPE into Select_Return from DBA643.APP_USER where UPPER(APP_USERNAME) = UPPER(USER);
+IF USER = 'DBA643' OR Select_Return = 'D' THEN
+Return_Var := '';
+ELSE
+Return_Var := 'CTL_SEC_USER = USER';
+END IF;
+RETURN Return_Var;
+END;
+
+/
+show errors;
+
+create or replace function select_funcc(username varchar2)
+return char as
+ret_var char(1);
+begin
+select USER_TYPE into ret_var from DBA643.APP_USER where APP_USERNAME = UPPER(user);
+return ret_var;
+end;
+/
+show errors;
+
+/***********DROP POLICIES************/
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Administrator', 'Row_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Clinic', 'Row_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Doctor', 'Row_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Patient', 'Row_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Visit', 'Row_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Diagnosis', 'Row_Owner_Sec' );
+
+
+/************ADD POLICIY*************/
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Administrator', 'Row_Owner_Sec', 'DBA643', 'Sec_Policy_Admin', 'SELECT, INSERT, UPDATE, DELETE');
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Clinic', 'Row_Owner_Sec', 'DBA643', 'Sec_Policy_Admin', 'SELECT, INSERT, UPDATE, DELETE');
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Doctor', 'Row_Owner_Sec', 'DBA643', 'Sec_Policy_Admin', 'SELECT, INSERT, UPDATE, DELETE');
+
+
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Patient', 'Row_Owner_Sec', 'DBA643', 'Sec_Policy_Patient', 'SELECT, INSERT, UPDATE, DELETE');
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Visit', 'Row_Owner_Sec', 'DBA643', 'Sec_Policy_Patient', 'SELECT, INSERT, UPDATE, DELETE');
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Diagnosis', 'Row_Owner_Sec', 'DBA643', 'Sec_Policy_Patient', 'SELECT, INSERT, UPDATE, DELETE');
+
+/********TEST CASES*************/
+conn AdminA/AdminA
+select * from Doctor;
+select * from Administrator;
+prompt "Patient's records";
+select * from Patient;
+conn dba643/Hang2md
+
+
+conn RDavison/RDavison
+select * from Doctor;
+select * from Administrator;
+prompt "Patient's records";
+select * from Patient;
+conn dba643/Hang2md
+

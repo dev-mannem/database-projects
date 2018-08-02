@@ -1,0 +1,233 @@
+/**************************************
+**IA643-DATABASE SECURITY AND AUDITING
+**FALL 2016, SECTION-1 WEDNESDAY
+**PROJECT #4
+**************************************/
+
+/*******USERS********/
+
+---drop users---
+DROP USER AdminA CASCADE;
+DROP USER AdminB CASCADE;
+DROP USER RDavison CASCADE;
+DROP USER SSEYmour CASCADE;
+
+---create users---
+Create USER AdminA IDENTIFIED BY AdminA
+DEFAULT TABLESPACE IA643_TBS
+QUOTA 10M ON IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO AdminA;
+
+
+Create USER AdminB IDENTIFIED BY AdminB
+DEFAULT TABLESPACE IA643_TBS
+QUOTA 10M ON IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO AdminB;
+
+
+Create USER RDavison IDENTIFIED BY RDavison
+DEFAULT TABLESPACE IA643_TBS
+QUOTA 10M ON IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO RDavison;
+
+
+Create USER SSEYmour IDENTIFIED BY SSeymour
+DEFAULT TABLESPACE IA643_TBS
+QUOTA 10M ON IA643_TBS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+
+GRANT CONNECT, RESOURCE TO SSEYmour;
+
+/*******ROLES*******/
+
+---drop roles---
+DROP ROLE Admin_R;
+DROP ROLE Doctor_R;
+
+---create roles---
+CREATE ROLE Admin_R;
+CREATE ROLE Doctor_R;
+
+/*******TRIGGERS********/
+
+---drop triggers---
+DROP TRIGGER Trigger_Administrator;
+DROP TRIGGER Trigger_Clinic;
+DROP TRIGGER Trigger_Doctor;
+DROP TRIGGER Trigger_Patient;
+DROP TRIGGER Trigger_Visit;
+DROP TRIGGER Trigger_Diagnosis;
+DROP TRIGGER Trigger_AppUser;
+
+---create triggers---
+CREATE OR REPLACE TRIGGER Trigger_Administrator
+BEFORE INSERT OR UPDATE ON Administrator
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+CREATE OR REPLACE TRIGGER Trigger_Clinic
+BEFORE INSERT OR UPDATE ON Clinic
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+CREATE OR REPLACE TRIGGER Trigger_Doctor
+BEFORE INSERT OR UPDATE ON Doctor
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+CREATE OR REPLACE TRIGGER Trigger_Patient
+BEFORE INSERT OR UPDATE ON Patient
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+CREATE OR REPLACE TRIGGER Trigger_Visit
+BEFORE INSERT OR UPDATE ON Visit
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+CREATE OR REPLACE TRIGGER Trigger_Diagnosis
+BEFORE INSERT OR UPDATE ON Diagnosis
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+CREATE OR REPLACE TRIGGER Trigger_AppUser
+BEFORE INSERT OR UPDATE ON App_User
+FOR EACH ROW
+BEGIN
+:new.CTL_SEC_USER := USER;
+END;
+/
+SHOW ERRORS;
+
+/********SYNONYMS********/
+---drop synonyms---
+DROP PUBLIC SYNONYM Administrator;
+DROP PUBLIC SYNONYM Clinic;
+DROP PUBLIC SYNONYM Doctor;
+DROP PUBLIC SYNONYM Patient;
+DROP PUBLIC SYNONYM Visit;
+DROP PUBLIC SYNONYM Diagnosis;
+
+---create synonyms and grant privileges---
+CREATE PUBLIC SYNONYM Administrator FOR DBA643.Administrator;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Administrator TO Admin_R;
+GRANT SELECT ON Administrator TO Doctor_R;
+
+CREATE PUBLIC SYNONYM Clinic FOR DBA643.Clinic;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Clinic TO Admin_R;
+GRANT SELECT ON Clinic TO Doctor_R;
+
+CREATE PUBLIC SYNONYM Doctor FOR DBA643.Doctor;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Doctor TO Admin_R;
+GRANT SELECT ON Doctor TO Doctor_R;
+
+CREATE PUBLIC SYNONYM Patient FOR DBA643.Patient;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Patient TO Doctor_R;
+
+CREATE PUBLIC SYNONYM Visit FOR DBA643.Visit;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Visit TO Doctor_R;
+
+CREATE PUBLIC SYNONYM Diagnosis FOR DBA643.Diagnosis;
+GRANT SELECT, INSERT, UPDATE, DELETE 
+ON Diagnosis TO Doctor_R;
+
+GRANT Admin_R TO AdminA, AdminB;
+GRANT Doctor_R TO RDavison, SSEYmour;
+
+/*******SECURITY POLICY FUNCTION********/
+---security policy function for patient tables---
+CREATE OR REPLACE FUNCTION Sec_Policy_Patient (
+P_Schema_Name IN VARCHAR2, 
+P_Object_Name IN VARCHAR2 )
+RETURN VARCHAR2 AS
+Return_Var VARCHAR2(255);
+BEGIN
+IF USER = 'DBA643' THEN
+Return_Var := '';
+ELSE
+ Return_Var := 'CTL_SEC_USER = USER';
+END IF;
+RETURN Return_Var;
+END;
+/
+show errors;
+
+---security policy function for administrator tables---
+CREATE OR REPLACE FUNCTION Sec_Policy_Admin (
+P_Schema_Name IN VARCHAR2, 
+P_Object_Name IN VARCHAR2 )
+RETURN VARCHAR2 IS
+Return_Var VARCHAR2(300);
+Select_Return VARCHAR2(300);
+BEGIN
+SELECT USER_TYPE INTO Select_Return FROM DBA643.APP_USER WHERE UPPER(APP_USERNAME) = UPPER(USER);
+IF USER = 'DBA643' or Select_Return='D' THEN
+Return_Var := '';
+ELSE
+Return_Var := 'CTL_SEC_USER = USER';
+END IF;
+RETURN Return_Var;
+END;
+/
+show errors;
+
+/**********POLICY**********/
+---drop policies---
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Administrator', 'Administrator_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Clinic', 'Clinic_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Doctor', 'Doctor_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Patient', 'Patient_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Visit', 'Visit_Owner_Sec' );
+EXEC DBMS_RLS.DROP_POLICY ('DBA643', 'Diagnosis', 'Diagnosis_Owner_Sec' );
+
+---add policies---
+---policy for admin tables---
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Administrator', 'Administrator_Owner_Sec', 'DBA643', 'Sec_Policy_Admin', 'SELECT, INSERT, UPDATE, DELETE',TRUE);
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Clinic', 'Clinic_Owner_Sec', 'DBA643', 'Sec_Policy_Admin', 'SELECT, INSERT, UPDATE, DELETE',TRUE);
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Doctor', 'Doctor_Owner_Sec', 'DBA643', 'Sec_Policy_Admin', 'SELECT, INSERT, UPDATE, DELETE',TRUE);
+
+---policy for patient tables---
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Patient', 'Patient_Owner_Sec', 'DBA643', 'Sec_Policy_Patient', 'SELECT, INSERT, UPDATE, DELETE',TRUE);
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Visit', 'Visit_Owner_Sec', 'DBA643', 'Sec_Policy_Patient', 'SELECT, INSERT, UPDATE, DELETE',TRUE);
+EXEC DBMS_RLS.ADD_Policy ('DBA643', 'Diagnosis', 'Diagnosis_Owner_Sec', 'DBA643', 'Sec_Policy_Patient', 'SELECT, INSERT, UPDATE, DELETE',TRUE);
+
+
